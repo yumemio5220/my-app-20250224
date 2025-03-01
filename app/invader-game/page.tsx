@@ -6,15 +6,83 @@ export default function InvaderGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const playerSpeed = 5;
   const bulletSpeed = 8;
+  const touchState = useRef({
+    left: false,
+    right: false,
+    shoot: false,
+  });
 
   useEffect(() => {
+    // モバイル判定
+    const checkIsMobile = () => {
+      setIsMobile(
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+      );
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // キャンバスサイズ調整
+    const setCanvasSize = () => {
+      if (isMobile) {
+        canvas.width = window.innerWidth * 0.9;
+        canvas.height = window.innerHeight * 0.7;
+      } else {
+        canvas.width = 800;
+        canvas.height = 600;
+      }
+    };
+    setCanvasSize();
+    window.addEventListener("resize", setCanvasSize);
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    // タッチ操作処理
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      if (x < canvas.width / 3) {
+        touchState.current.left = true;
+        playerDirection = -1;
+      } else if (x > (canvas.width * 2) / 3) {
+        touchState.current.right = true;
+        playerDirection = 1;
+      } else if (y > canvas.height * 0.8) {
+        touchState.current.shoot = true;
+        if (Date.now() - lastShotTime > shotDelay) {
+          bullets.push({
+            x: player.x + player.width / 2 - 2.5,
+            y: player.y,
+          });
+          lastShotTime = Date.now();
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchState.current.left = false;
+      touchState.current.right = false;
+      touchState.current.shoot = false;
+      playerDirection = 0;
+    };
+
+    if (isMobile) {
+      canvas.addEventListener("touchstart", handleTouchStart);
+      canvas.addEventListener("touchend", handleTouchEnd);
+      canvas.addEventListener("touchcancel", handleTouchEnd);
+    }
 
     // ゲーム初期化
     const player = {
@@ -168,8 +236,108 @@ export default function InvaderGame() {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("resize", checkIsMobile);
+      window.removeEventListener("resize", setCanvasSize);
+
+      if (canvas) {
+        canvas.removeEventListener("touchstart", handleTouchStart);
+        canvas.removeEventListener("touchend", handleTouchEnd);
+        canvas.removeEventListener("touchcancel", handleTouchEnd);
+      }
+    };
+  }, [isMobile]);
+
+  // ゲーム状態をrefで管理
+  const gameState = useRef({
+    playerDirection: 0,
+    lastShotTime: 0,
+    shotDelay: 200,
+    bullets: [] as { x: number; y: number }[],
+    player: {
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 30,
+    },
+  });
+
+  // ゲーム状態の初期化
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    gameState.current = {
+      ...gameState.current,
+      player: {
+        x: canvas.width / 2 - 25,
+        y: canvas.height - 50,
+        width: 50,
+        height: 30,
+      },
+      bullets: [],
+      playerDirection: 0,
+      lastShotTime: 0,
     };
   }, []);
+
+  // 仮想コントローラ
+  const VirtualControls = () => (
+    <div className="fixed bottom-4 left-0 right-0 flex justify-between px-4">
+      <div className="flex space-x-4">
+        <button
+          className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white text-2xl"
+          onTouchStart={() => {
+            touchState.current.left = true;
+            gameState.current.playerDirection = -1;
+          }}
+          onTouchEnd={() => {
+            touchState.current.left = false;
+            if (!touchState.current.right)
+              gameState.current.playerDirection = 0;
+          }}
+        >
+          ←
+        </button>
+        <button
+          className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-white text-2xl"
+          onTouchStart={() => {
+            touchState.current.right = true;
+            gameState.current.playerDirection = 1;
+          }}
+          onTouchEnd={() => {
+            touchState.current.right = false;
+            if (!touchState.current.left) gameState.current.playerDirection = 0;
+          }}
+        >
+          →
+        </button>
+      </div>
+      <button
+        className="w-16 h-16 bg-red-500 bg-opacity-80 rounded-full flex items-center justify-center text-white text-2xl"
+        onTouchStart={() => {
+          touchState.current.shoot = true;
+          if (
+            Date.now() - gameState.current.lastShotTime >
+            gameState.current.shotDelay
+          ) {
+            gameState.current.bullets.push({
+              x:
+                gameState.current.player.x +
+                gameState.current.player.width / 2 -
+                2.5,
+              y: gameState.current.player.y,
+            });
+            gameState.current.lastShotTime = Date.now();
+          }
+        }}
+        onTouchEnd={() => {
+          touchState.current.shoot = false;
+        }}
+      >
+        🔫
+      </button>
+    </div>
+  );
 
   const restartGame = () => {
     setScore(0);
@@ -200,6 +368,7 @@ export default function InvaderGame() {
       />
       <div className="mt-4 text-white">Score: {score}</div>
       {gameOver && <div className="mt-4 text-red-500 text-2xl">Game Over!</div>}
+      {isMobile && <VirtualControls />}
     </div>
   );
 }
