@@ -17,6 +17,12 @@ export default function Home() {
         >
           Calculator
         </a>
+        <a
+          href="/random-number"
+          className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-lg sm:text-xl hover:bg-gray-200 transition-colors active:scale-95"
+        >
+          Random Number
+        </a>
       </div>
 
       {/* Mobile notice */}
