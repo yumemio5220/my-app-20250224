@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function RandomNumberPage() {
   const [numbers, setNumbers] = useState<number[]>([]);
@@ -12,6 +13,9 @@ export default function RandomNumberPage() {
 
   return (
     <div className="flex flex-col items-center h-screen p-4">
+      <Link href="/" className="text-blue-500 hover:text-blue-700 mb-4">
+        ← Back to Home
+      </Link>
       <div className="flex flex-col items-center pt-8">
         <h1 className="text-2xl font-bold mb-8">Random Number Generator</h1>
         <button

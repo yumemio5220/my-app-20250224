@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 export default function InvaderGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -346,6 +347,9 @@ export default function InvaderGame() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black">
+      <Link href="/" className="text-blue-500 hover:text-blue-700 mb-4">
+        ← Back to Home
+      </Link>
       {gameOver && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
           <div className="text-center">
