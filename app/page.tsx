@@ -29,6 +29,12 @@ export default function Home() {
         >
           Prime Number
         </a>
+        <a
+          href="/block-breaker"
+          className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-lg sm:text-xl hover:bg-gray-200 transition-colors active:scale-95"
+        >
+          Block Breaker
+        </a>
       </div>
 
       {/* Mobile notice */}
